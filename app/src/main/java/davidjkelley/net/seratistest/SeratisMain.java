@@ -23,8 +23,6 @@ import java.util.ArrayList;
 
 public class SeratisMain extends Activity {
 
-
-
     JSONArray providersJsonArray;
     JSONArray patientsJsonArray;
     JSONArray joinJSONArray;
@@ -110,6 +108,19 @@ public class SeratisMain extends Activity {
         patientListView.setOnItemClickListener(new ListListener(patientListView,this));
     }
 
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.seratis_main, menu);
+        return true;
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_settings) {
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
     public class ListListener implements AdapterView.OnItemClickListener {
 
         ListView dynamicListView;
@@ -127,8 +138,7 @@ public class SeratisMain extends Activity {
             String message = "";
             if (position > 0) {//Simple test to not do any work on the Header Row.
 
-                if (dynamicListView.getTag().toString().equals("Provider")) {
-                    //Provider View
+                if (dynamicListView.getTag().toString().equals("Provider")) {//Provider Work
                     try {
                         alertDialog.setTitle(dynamicListView.getTag().toString() + " " +
                                providersJsonArray.getJSONObject(jsonAppropriateListId).get("name").toString());
@@ -155,13 +165,10 @@ public class SeratisMain extends Activity {
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-                }
-                else {
-                    //Patient View
+                }else {//Patient Work
                     try {
                         alertDialog.setTitle(dynamicListView.getTag().toString() + " " +
                                 patientsJsonArray.getJSONObject(jsonAppropriateListId).getString("name"));
-
                         //Do Logic for list
 
 
@@ -187,18 +194,5 @@ public class SeratisMain extends Activity {
                 toast.show();
             }
         }
-    }
-
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.seratis_main, menu);
-        return true;
-    }
-
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 }
