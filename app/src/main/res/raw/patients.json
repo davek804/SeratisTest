@@ -1,0 +1,12 @@
+{
+    "patients": [
+        {
+            "id": 1,
+            "name": "Eric Cartman"
+        },
+        {
+            "id": 2,
+            "name": "Stan Marsh"
+        }
+    ]
+}

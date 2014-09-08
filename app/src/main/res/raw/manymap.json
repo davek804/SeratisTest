@@ -1,0 +1,17 @@
+{
+    "individual": {
+        "id": 1,
+        "type": "provider"
+    },
+    "subIndividuals": [
+        {
+            "id": 1
+        },
+        {
+            "id": 2
+        },
+        {
+            "id": 3
+        }
+    ]
+}
