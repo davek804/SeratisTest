@@ -182,7 +182,7 @@ public class SeratisMain extends Activity {
                             String[] tempPatientNamesArray = patientNamesAsIds.split(",");
                             int spCounter = 0;
                             for (String sp : tempPatientNamesArray) {
-                                if (position-1 == j) {
+                                if (position == j) {
                                     int nameId = Integer.parseInt(activity.providersJSON.getJSONArray("providers").getJSONObject(spCounter).get("id").toString());
                                     if (sp.length() > 0 && Integer.parseInt(sp) == nameId) {
                                         //message += activity.providersJSON.getJSONArray("providers").getJSONObject(spCounter).get("name").toString() + "\n";
