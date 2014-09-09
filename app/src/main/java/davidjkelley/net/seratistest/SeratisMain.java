@@ -91,6 +91,7 @@ public class SeratisMain extends Activity {
                 e.printStackTrace();
             }
         }
+        //Bet there would be an easy way to do both the below/above in one try/catch, but I simply did it this way for expedience.
         ArrayList<String> patients = new ArrayList<String>();
         count = 0;
         while (count < patientsLength) {
@@ -116,13 +117,14 @@ public class SeratisMain extends Activity {
         TextView providerTitle = (TextView) findViewById(R.id.providerTitle);
         patientListView.addHeaderView(patientHeader);
         providerListView.addHeaderView(providerHeader);
-        //Set ListView tags to be used later for dynamism.
+        //Set ListView tags to be used later for dynamism in the ListViewAdapter.
         patientListView.setTag("Patient");
         providerListView.setTag("Provider");
 
         providerListView.setAdapter(new ArrayAdapter<String>(this, R.layout.list_item, providers));
         patientListView.setAdapter(new ArrayAdapter<String>(this, R.layout.list_item, patients));
 
+        //In reality, these are probably the most improtant methods in the whole project, as without them, there'd be no displaying of sublists!
         providerListView.setOnItemClickListener(new ListListener(providerListView, this));
         patientListView.setOnItemClickListener(new ListListener(patientListView, this));
     }
@@ -137,17 +139,40 @@ public class SeratisMain extends Activity {
             dynamicListView = lv;
             this.activity = activity;
         }
-
+        /* Whether this method is the best place for so much work to happen or not is certainly
+        up for debate. I'm definitely not married to the idea. I left it here as I wanted to get the code over to you
+        guys. I'm absolutely cognizant of the fact that normally this code would be abstracted out of this onItemClick
+        method, but for illustrative purposes, I would have used mostly the same logic, so moving it to another method
+        seemed more form than functional.
+         */
         public void onItemClick(AdapterView<?> parent, final View view,
                                 int position, long id) {
-            AlertDialog alertDialog = new AlertDialog.Builder(activity).create();
+            AlertDialog alertDialog = new AlertDialog.Builder(activity).create();//Construct the dialog box that will be used
             int jsonAppropriateListId = position - 1; //Have to move the counter back by one to match the JSON and lists
-            String message = "";
+            String message = "";//Initialize the string that will house the respective sub-lists. A length of 0 is important later.
             if (position > 0) {//Simple test to not do any work on the Header Row.
 
+                /* This "tag check" is a bit of a hack.
+                I wanted a simple way to be able to use one listener, but retain two
+                code paths, one for each list view. this allowed me to do so and be
+                largely in charge of the process. I have written similar functions in more complex and
+                arguably better designed ways, but this seemed expedient.
+                 */
                 if (dynamicListView.getTag().toString().equals("Provider")) {
                 //Provider Work
                     try {
+                        /*
+                        This was my first way of dealing with the problem of the many:many relationship and displaying the sublists.
+                        It... "works". I'm not proud of it. But what's the rule? Hack it together the first time, say good job, then hit delete,
+                        then rewrite it.
+                        So in the else statement below, I did rewrite the process. It's still very inefficient, and would not be scalable at all!
+                        But in the latter solution, where I am dealing with the patientList and displaying their providers, the nature of the many:many
+                        relationship (as I implemented it in the joinJSONArray above) is subtlely different than the way it exists for the
+                        providers -> patients.
+                        In all honestly, I've left this one in as a comparison to the second solution.
+
+
+                         */
                         alertDialog.setTitle(dynamicListView.getTag().toString() + " " +
                                 providersJsonArray.getJSONObject(jsonAppropriateListId).get("name").toString());
 
@@ -173,29 +198,44 @@ public class SeratisMain extends Activity {
                         e.printStackTrace();
                     }
                 } else {
+                /*
+                This is the second solution. I'm still not super proud of it, as it is not scalable. I believe it would have major issues with almost any deviation
+                in the JSON expectations. That's easily one of the biggest assumptions, that the JSON will fit exactly what is expected.
+
+                There's absolutely no error handling, beyond some really basic dealing with the fact that I left the third provider without any patients; or the fact that I
+                accommodated a HeaderRow that would otherwise have led to a crash.
+
+                I would have MUCH preferred to implement a SQL Lite solution on the device. That would have been so much more efficient.
+
+                Even in what I consider to be the 'better' implementation below, there are some major inefficiencies of crawling up and down lists and arrays, not at all scalable.
+
+                At least in a solution where I could implement a one-to-one relationship of many entries (thus leading to many-to-many when aggregating row entries in the join table)
+                there would have been much more efficient searching of the join table.
+
+                I also got a bit more creative with my variables in this method to make sure that everything was a bit more straightforward.
+                 */
                 //Patient Work
                     try {
                         alertDialog.setTitle(dynamicListView.getTag().toString() + " " +
                                 patientsJsonArray.getJSONObject(jsonAppropriateListId).getString("name"));
                         //Do the work to produce many:many list for patients.
-                        HashMap<String, String> uniqueList = new HashMap<String, String>();
-                        ArrayList<String> uniquerList = new ArrayList<String>();
-                        String[] thisCountsPatientsList = new String[joinLength];
-                        String[] splitPatientsForThisJoinEntry;
+                        ArrayList<String> listofFinalEntries = new ArrayList<String>();
+                        String[] commasIncludedPatientIds = new String[joinLength];
+                        String[] patientIdsArray;
                         for (int j = 0; j < joinLength; j++) {
-                            thisCountsPatientsList[j] = joinJSONArray.getJSONObject(j).getString("patientIds");
-                            splitPatientsForThisJoinEntry = thisCountsPatientsList[j].split(",");
-                            for (String s : splitPatientsForThisJoinEntry) {//For each item in the current joinList, check to see if its ID matches the ID of the selected ListItem (patient)
+                            commasIncludedPatientIds[j] = joinJSONArray.getJSONObject(j).getString("patientIds");
+                            patientIdsArray = commasIncludedPatientIds[j].split(",");
+                            for (String s : patientIdsArray) {//For each item in the current joinList, check to see if its ID matches the ID of the selected ListItem (patient)
+                                //This was where I struggled for a good amount of time to wrap my head around the problem. I worked on alternative such as unique lists, etc.
                                 if (s.length() > 0) {
-                                    int superSeriouslyImportantNumber = Integer.parseInt(s);
-                                    if (superSeriouslyImportantNumber == position) {
-                                        //uniqueList.put("id", joinJSONArray.getJSONObject(superSeriouslyImportantNumber).getString("providerId"));
-                                        uniquerList.add(providersJsonArray.getJSONObject(j).getString("name"));
+                                    int currentPatientIdToParse = Integer.parseInt(s);
+                                    if (currentPatientIdToParse == position) {
+                                        listofFinalEntries.add(providersJsonArray.getJSONObject(j).getString("name"));
                                     }
                                 }
                             }
                         }
-                        for (String s : uniquerList) {
+                        for (String s : listofFinalEntries) {
                             message += s + "\n";
                         }
                     } catch (JSONException e) {
